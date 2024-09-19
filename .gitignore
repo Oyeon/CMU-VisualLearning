@@ -1,5 +1,5 @@
 # Ignore all files in the data directory
-/lab1/reference/data/
+lab1/reference/data/
 
 # Allow specific file types if needed
 !*.csv
