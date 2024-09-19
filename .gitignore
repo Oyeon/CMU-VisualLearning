@@ -1,0 +1,19 @@
+# Ignore all files in the data directory
+/lab1/reference/data/
+
+# Allow specific file types if needed
+!*.csv
+!*.json
+
+# Ignore specific file types
+*.log
+*.tmp
+*.bak
+
+# Ignore hidden files and directories
+.*
+!.gitignore
+
+# Ignore specific directories
+cache/
+temp/
