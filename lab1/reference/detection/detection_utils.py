@@ -105,11 +105,21 @@ def fcos_match_locations_to_gt(
     return matched_gt_boxes
 
 
+
 def fcos_get_deltas_from_locations(
     locations: torch.Tensor, gt_boxes: torch.Tensor, stride: int
 ) -> torch.Tensor:
     """
-    [Existing Docstring]
+    Computes the deltas (l, t, r, b) between feature locations and GT boxes,
+    normalized by the stride.
+
+    Args:
+        locations (torch.Tensor): Tensor of shape `(N, 2)` representing feature locations.
+        gt_boxes (torch.Tensor): Tensor of shape `(N, 5)` representing matched GT boxes `(x1, y1, x2, y2, C)`.
+        stride (int): Stride of the FPN level.
+
+    Returns:
+        torch.Tensor: Tensor of shape `(N, 4)` containing normalized deltas.
     """
     # Determine if gt_boxes include class labels
     if gt_boxes.shape[1] == 5:
@@ -129,7 +139,6 @@ def fcos_get_deltas_from_locations(
 
     # Compute deltas for foreground boxes
     if (~background_mask).any():
-        # Select foreground locations and boxes
         fg_locations = locations[~background_mask]
         fg_boxes = boxes[~background_mask]
 
@@ -206,9 +215,15 @@ def fcos_apply_deltas_to_locations(
     return output_boxes
 
 
-def fcos_make_centerness_targets(deltas: torch.Tensor):
+def fcos_make_centerness_targets(deltas: torch.Tensor) -> torch.Tensor:
     """
-    [Existing Docstring]
+    Computes the centerness targets based on the deltas.
+
+    Args:
+        deltas (torch.Tensor): Tensor of shape `(N, 4)` containing deltas `(l, t, r, b)`.
+
+    Returns:
+        torch.Tensor: Tensor of shape `(N,)` containing centerness scores.
     """
     
     centerness = torch.zeros(deltas.size(0), dtype=deltas.dtype, device=deltas.device)
@@ -240,10 +255,7 @@ def fcos_make_centerness_targets(deltas: torch.Tensor):
     # Assign -1 for background boxes
     centerness[background_mask] = -1.0
 
-    # Add batch dimension
-    centerness = centerness.unsqueeze(0)  # Shape: (1, N)
-
-    return centerness
+    return centerness  # Shape: (N,)
 
 def get_fpn_location_coords(
     shape_per_fpn_level: Dict[str, Tuple],
@@ -254,8 +266,8 @@ def get_fpn_location_coords(
     """
     [Existing Docstring]
     """
-
-    # Set these to `(N, 2)` Tensors giving absolute location co-ordinates.
+    
+    # Set these to `(N, 2)` Tensors giving absolute location coordinates.
     location_coords = {
         level_name: None for level_name, _ in shape_per_fpn_level.items()
     }
@@ -265,9 +277,7 @@ def get_fpn_location_coords(
         B, C, H, W = feat_shape  # Unpack feature shape
 
         # Generate center coordinates
-        # x coordinates: (0.5 * stride, 1.5 * stride, ..., (W - 0.5) * stride)
         x_coords = (torch.arange(W, dtype=dtype, device=device) + 0.5) * level_stride
-        # y coordinates: (0.5 * stride, 1.5 * stride, ..., (H - 0.5) * stride)
         y_coords = (torch.arange(H, dtype=dtype, device=device) + 0.5) * level_stride
 
         # Repeat x_coords for each y and tile y_coords for each x

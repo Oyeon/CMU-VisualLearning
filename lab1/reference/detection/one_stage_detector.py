@@ -1,17 +1,49 @@
 # Credit to Justin Johnsons' EECS-598 course at the University of Michigan,
 # from which this assignment is heavily drawn.
 import math
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import torch
 from detection_utils import *
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data._utils.collate import default_collate
-from torchvision.ops import sigmoid_focal_loss
 from torchvision import models
 from torchvision.models import feature_extraction
 from torchvision.ops import nms
+
+from torchvision.ops import sigmoid_focal_loss
+
+def convert_to_one_hot(cls_targets: torch.Tensor, num_classes: int) -> torch.Tensor:
+    """
+    Converts class labels to one-hot encoded targets suitable for sigmoid focal loss.
+
+    Args:
+        cls_targets (torch.Tensor): Tensor of shape [N] with class labels.
+        num_classes (int): Number of classes.
+
+    Returns:
+        torch.Tensor: One-hot encoded tensor of shape [N, C].
+    """
+    # Ensure cls_targets is of integer type
+    cls_targets = cls_targets.long()
+
+    # Initialize a tensor of zeros
+    one_hot_targets = torch.zeros(
+        (cls_targets.size(0), num_classes),
+        device=cls_targets.device,
+        dtype=torch.float32
+    )
+
+    # Create a mask for positive samples (labels >= 0)
+    pos_mask = cls_targets >= 0
+
+    if pos_mask.any():
+        # Assign 1 to the corresponding class indices
+        one_hot_targets[pos_mask, cls_targets[pos_mask]] = 1.0
+
+    # Background samples remain all zeros
+    return one_hot_targets
 
 
 class DetectorBackboneWithFPN(nn.Module):
@@ -567,25 +599,45 @@ class FCOS(nn.Module):
         )
         self._normalizer = 1000  # Initial value for EMA normalizer
 
-    def forward(self, images: torch.Tensor, gt_boxes: torch.Tensor = None) -> Dict[str, torch.Tensor]:
+    def forward(self, images: torch.Tensor, gt_boxes: torch.Tensor = None, **kwargs) -> Dict[str, torch.Tensor]:
+        """
+        FCOS Forward Pass
+
+        Args:
+            images (torch.Tensor): Batch of images, shape (B, C, H, W).
+            gt_boxes (torch.Tensor, optional): Ground-truth boxes, shape (B, N, 5).
+
+        Returns:
+            Dict[str, torch.Tensor]: Losses during training.
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Predictions during inference.
+        """
         # Extract features using backbone and FPN
         features = self.backbone_fpn(images)  # features is a dict
 
         # Generate shapes for each FPN level
-        shape_per_fpn_level = {level: feat.shape[-2:] for level, feat in features.items()}
+        shape_per_fpn_level = {level: feat.shape for level, feat in features.items()}
 
         # Generate location coordinates for each FPN level
-        locations_per_fpn_level = get_fpn_location_coords(shape_per_fpn_level, self.backbone_fpn.fpn_strides, dtype=features[next(iter(features))].dtype, device=features[next(iter(features))].device)
+        locations_per_fpn_level = get_fpn_location_coords(
+            shape_per_fpn_level,
+            self.backbone_fpn.fpn_strides,
+            dtype=features[next(iter(features))].dtype,
+            device=features[next(iter(features))].device
+        )
 
         # Pass features through prediction heads
         class_logits, boxreg_deltas, centerness_logits = self.prediction_heads(features)
 
         if self.training:
-            # Initialize loss accumulators
-            loss_cls_total = 0.0
-            loss_box_total = 0.0
-            loss_ctr_total = 0.0
-            num_pos_total = 0
+            # Initialize accumulators for targets
+            all_class_targets = []
+            all_boxreg_targets_levels = []
+            all_centerness_targets_levels = []
+            
+            # Initialize accumulators for predictions
+            all_class_logits_pred_levels = []
+            all_boxreg_deltas_pred_levels = []
+            all_centerness_logits_pred_levels = []
 
             B = images.shape[0]
             for b in range(B):
@@ -596,128 +648,123 @@ class FCOS(nn.Module):
                 matched_gt_boxes = fcos_match_locations_to_gt(
                     {k: v.clone().detach() for k, v in locations_per_fpn_level.items()},
                     self.backbone_fpn.fpn_strides,
-                    gt_b.unsqueeze(0)  # Shape: (1, Num_GT, 5)
+                    gt_b  # Shape: (Num_GT, 5)
                 )
 
-                # Should return (1, L, 5)
-                matched_gt_boxes = matched_gt_boxes[0]
+                for level_name in self.backbone_fpn.fpn_strides.keys():
+                    # Extract class targets
+                    cls_target = matched_gt_boxes[level_name][:, 4]  # Shape: (N,)
+                    all_class_targets.append(cls_target)
 
-                # Compute deltas
-                deltas = fcos_get_deltas_from_locations(
-                    locations_per_fpn_level,
-                    matched_gt_boxes,
-                    self.backbone_fpn.fpn_strides
-                )
-                # Shape: (L, 4)
+                    # Compute box deltas using utility function
+                    deltas = fcos_get_deltas_from_locations(
+                        locations_per_fpn_level[level_name],
+                        matched_gt_boxes[level_name],
+                        self.backbone_fpn.fpn_strides[level_name]
+                    )  # Shape: (N, 4)
+                    all_boxreg_targets_levels.append(deltas)
 
-                # Compute centerness targets
-                centerness_targets = fcos_make_centerness_targets(deltas)
-                # Shape: (L, )
+                    # Compute centerness targets using utility function
+                    ctr_target = fcos_make_centerness_targets(deltas)  # Shape: (N,)
+                    all_centerness_targets_levels.append(ctr_target)
+            
+            # Concatenate all targets
+            cls_targets_tensor = torch.cat(all_class_targets, dim=0)       # Shape: [N]
+            box_targets_tensor = torch.cat(all_boxreg_targets_levels, dim=0)   # Shape: [N, 4]
+            ctr_targets_tensor = torch.cat(all_centerness_targets_levels, dim=0)  # Shape: [N]
 
-                # Compute classification targets
-                cls_targets = matched_gt_boxes[:, 4]
-                # Shape: (L, )
+            # Convert class targets to one-hot encoding
+            class_targets_binary = convert_to_one_hot(cls_targets_tensor, self.num_classes)  # Shape: [N, C]
 
-                # Compute classification loss
-                cls_pred = class_logits['p3'].view(-1, self.num_classes)  # Adjust based on levels
-                loss_cls = sigmoid_focal_loss(cls_pred, cls_targets)
+            # Accumulate predictions from all FPN levels
+            for level in self.backbone_fpn.fpn_strides.keys():
+                # Class logits
+                all_class_logits_pred_levels.append(class_logits[level].reshape(-1, self.num_classes))  # [L, C]
+                # Box regression deltas
+                all_boxreg_deltas_pred_levels.append(boxreg_deltas[level].reshape(-1, 4))                 # [L, 4]
+                # Centerness logits
+                all_centerness_logits_pred_levels.append(centerness_logits[level].reshape(-1, 1))        # [L, 1]
 
-                # Compute box regression loss (ignore background)
-                fg_mask = cls_targets != -1
-                if fg_mask.sum() > 0:
-                    box_pred = boxreg_deltas['p3'][fg_mask]  # Shape: (num_fg, 4)
-                    deltas_fg = deltas[fg_mask]               # Shape: (num_fg, 4)
-                    loss_box = F.l1_loss(box_pred, deltas_fg, reduction='sum')
+            # Concatenate all predictions
+            class_logits_all = torch.cat(all_class_logits_pred_levels, dim=0)        # Shape: [N, C]
+            boxreg_deltas_all = torch.cat(all_boxreg_deltas_pred_levels, dim=0)      # Shape: [N, 4]
+            centerness_logits_all = torch.cat(all_centerness_logits_pred_levels, dim=0)  # Shape: [N, 1]
 
-                    # Compute centerness loss
-                    ctr_pred = centerness_logits['p3'][fg_mask].squeeze()         # Shape: (num_fg, )
-                    ctr_targets_b = centerness_targets[fg_mask].unsqueeze(1)      # Shape: (num_fg, 1)
-                    loss_ctr = F.binary_cross_entropy_with_logits(ctr_pred, ctr_targets_b, reduction='sum')
-                else:
-                    loss_box = torch.tensor(0.0, device=images.device)
-                    loss_ctr = torch.tensor(0.0, device=images.device)
+            # Debugging: Verify shapes
+            # print(f"class_logits_all shape: {class_logits_all.shape}")             # Expected: [N, C]
+            # print(f"class_targets_binary shape: {class_targets_binary.shape}")     # Expected: [N, C]
+            # print(f"boxreg_deltas_all shape: {boxreg_deltas_all.shape}")           # Expected: [N, 4]
+            # print(f"ctr_targets_tensor shape: {ctr_targets_tensor.shape}")         # Expected: [N]
+            # print(f"centerness_logits_all shape: {centerness_logits_all.shape}") # Expected: [N, 1]
 
-                # Accumulate losses
-                loss_cls_total += loss_cls
-                loss_box_total += loss_box
-                loss_ctr_total += loss_ctr
-                num_pos_total += fg_mask.sum().item()
-
-            # Normalize losses
-            loss_normalizer = num_pos_total if num_pos_total > 0 else 1.0
-            losses = {
-                "loss_cls": loss_cls_total / loss_normalizer,
-                "loss_box": loss_box_total / loss_normalizer,
-                "loss_ctr": loss_ctr_total / loss_normalizer,
-            }
-            return losses
-        else:
-            # Inference mode
-            pred_boxes_all_levels = []
-            pred_classes_all_levels = []
-            pred_scores_all_levels = []
-
-            for level_name, cls_logits in class_logits.items():
-                # Get box deltas and centerness for the current level
-                boxreg_level = boxreg_deltas[level_name].view(-1, 4)  # Shape: (L, 4)
-                ctr_level = centerness_logits[level_name].view(-1, 1)  # Shape: (L, 1)
-                cls_level = cls_logits.view(-1, self.num_classes)  # Shape: (L, C)
-
-                # Apply sigmoid to centerness and class logits
-                ctr_probs = torch.sigmoid(ctr_level)  # Shape: (L, 1)
-                cls_probs = torch.sigmoid(cls_level)  # Shape: (L, C)
-
-                # Combine class probabilities and centerness
-                confidence_scores = torch.sqrt(cls_probs * ctr_probs)  # Shape: (L, C)
-
-                # Get the top class and score
-                scores, classes = confidence_scores.max(dim=1)  # Shape: (L,), (L,)
-
-                # Apply score threshold
-                score_mask = scores > self.test_score_thresh
-                scores = scores[score_mask]
-                classes = classes[score_mask]
-                selected_deltas = boxreg_level[score_mask]  # Shape: (N, 4)
-
-                # Get corresponding locations
-                locations = locations_per_fpn_level[level_name]  # Shape: (L, 2)
-                selected_locations = locations[score_mask]  # Shape: (N, 2)
-
-                # Apply deltas to locations to get predicted boxes
-                pred_boxes = fcos_apply_deltas_to_locations(
-                    deltas=selected_deltas,
-                    locations=selected_locations,
-                    stride=self.backbone_fpn.fpn_strides[level_name]
-                )  # Shape: (N, 4)
-
-                # Clip XYXY box-coordinates to image boundaries
-                img_h, img_w = images.shape[2], images.shape[3]
-                pred_boxes[:, 0::2].clamp_(min=0, max=img_w - 1)  # x1, x2
-                pred_boxes[:, 1::2].clamp_(min=0, max=img_h - 1)  # y1, y2
-
-                pred_boxes_all_levels.append(pred_boxes)
-                pred_classes_all_levels.append(classes)
-                pred_scores_all_levels.append(scores)
-
-            # Concatenate all predictions from different FPN levels
-            pred_boxes_all_levels = torch.cat(pred_boxes_all_levels, dim=0)
-            pred_classes_all_levels = torch.cat(pred_classes_all_levels, dim=0)
-            pred_scores_all_levels = torch.cat(pred_scores_all_levels, dim=0)
-
-            # Perform Non-Maximum Suppression (NMS)
-            keep = nms(pred_boxes_all_levels, pred_scores_all_levels, iou_threshold=self.test_nms_thresh)
-
-            # Filter the predictions
-            pred_boxes_all_levels = pred_boxes_all_levels[keep]
-            pred_classes_all_levels = pred_classes_all_levels[keep]
-            pred_scores_all_levels = pred_scores_all_levels[keep]
-
-            return (
-                pred_boxes_all_levels,
-                pred_classes_all_levels,
-                pred_scores_all_levels,
+            # Compute classification loss with reduction='sum'
+            loss_cls = sigmoid_focal_loss(
+                class_logits_all,        # [N, C]
+                class_targets_binary,    # [N, C]
+                reduction='sum'
             )
 
+            # Compute Box Regression Loss (Only for positive samples)
+            fg_mask = cls_targets_tensor != -1  # Background samples have label -1, Shape: [N]
+
+            # Ensure fg_mask is boolean
+            fg_mask = fg_mask.bool()
+
+            if fg_mask.sum() > 0:
+                box_pred = boxreg_deltas_all[fg_mask]           # Shape: (num_fg, 4)
+                box_targets_fg = box_targets_tensor[fg_mask]    # Shape: (num_fg, 4)
+                loss_box = F.l1_loss(box_pred, box_targets_fg, reduction='sum')
+
+                # Centerness Loss (Only for positive samples)
+                ctr_pred = centerness_logits_all[fg_mask].squeeze(1)  # Shape: (num_fg,)
+                ctr_targets_fg = ctr_targets_tensor[fg_mask]          # Shape: (num_fg,)
+                loss_ctr = F.binary_cross_entropy_with_logits(
+                    ctr_pred, 
+                    ctr_targets_fg, 
+                    reduction='sum'
+                )
+            else:
+                loss_box = torch.tensor(0.0, device=images.device)
+                loss_ctr = torch.tensor(0.0, device=images.device)
+
+            # Debugging: Verify that all losses are scalar
+            # print(f"loss_cls shape: {loss_cls.shape}")  # Expected: torch.Size([])
+            # print(f"loss_box shape: {loss_box.shape}")  # Expected: torch.Size([])
+            # print(f"loss_ctr shape: {loss_ctr.shape}")  # Expected: torch.Size([])
+
+            # Compute normalization
+            loss_normalizer = self._normalizer * B
+            losses = {
+                "loss_cls": loss_cls / loss_normalizer,
+                "loss_box": loss_box / loss_normalizer,
+                "loss_ctr": loss_ctr / loss_normalizer,
+            }
+
+            return losses
+        else:
+            # Inference mode: Handle predictions
+            # Retrieve locations and predictions
+            locations_per_fpn_level = get_fpn_location_coords(
+                {level: feat.shape for level, feat in self.backbone_fpn(images).items()},
+                self.backbone_fpn.fpn_strides,
+                dtype=images.dtype,
+                device=images.device
+            )
+
+            pred_cls_logits, pred_boxreg_deltas, pred_ctr_logits = self.prediction_heads(features)
+
+            # Call the inference method with the provided thresholds
+            return self.inference(
+                images,
+                locations_per_fpn_level,
+                pred_cls_logits,
+                pred_boxreg_deltas,
+                pred_ctr_logits,
+                test_score_thresh=kwargs.get('test_score_thresh', 0.3),
+                test_nms_thresh=kwargs.get('test_nms_thresh', 0.5),
+            )
+
+    #
     def inference(
         self,
         images: torch.Tensor,
@@ -727,7 +774,7 @@ class FCOS(nn.Module):
         pred_ctr_logits: Dict[str, torch.Tensor],
         test_score_thresh: float = 0.3,
         test_nms_thresh: float = 0.5,
-    ):
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Perform inference on the input images and return predictions.
 
@@ -752,21 +799,21 @@ class FCOS(nn.Module):
         pred_scores_all_levels = []
 
         for level_name in pred_cls_logits.keys():
-            level_cls_logits = pred_cls_logits[level_name].squeeze(-1)  # (B, H*W, num_classes)
-            level_deltas = pred_boxreg_deltas[level_name].squeeze(-1)  # (B, H*W, 4)
-            level_ctr_logits = pred_ctr_logits[level_name].squeeze(-1)  # (B, H*W, 1)
+            level_cls_logits = pred_cls_logits[level_name].view(images.shape[0], -1, self.num_classes)  # (B, H*W, num_classes)
+            level_deltas = pred_boxreg_deltas[level_name].view(images.shape[0], -1, 4)  # (B, H*W, 4)
+            level_ctr_logits = pred_ctr_logits[level_name].view(images.shape[0], -1, 1)  # (B, H*W, 1)
 
             # Iterate over the batch
             for i in range(images.shape[0]):
                 # Get per-image predictions
                 cls_logits = level_cls_logits[i]  # (H*W, num_classes)
-                deltas = level_deltas[i]  # (H*W, 4)
+                deltas = level_deltas[i]          # (H*W, 4)
                 ctr_logits = level_ctr_logits[i]  # (H*W, 1)
 
                 # Compute sigmoid probabilities
                 cls_probs = torch.sigmoid(cls_logits)  # (H*W, num_classes)
                 ctr_probs = torch.sigmoid(ctr_logits)  # (H*W, 1)
-                confidence_scores = torch.sqrt(cls_probs * ctr_probs)  # (H*W, num_classes)
+                confidence_scores = torch.sqrt(cls_probs * ctr_probs.expand_as(cls_probs))  # (H*W, num_classes)
 
                 scores, classes = confidence_scores.max(dim=1)  # (H*W,), (H*W,)
 
@@ -803,7 +850,7 @@ class FCOS(nn.Module):
         pred_classes_all_levels = torch.cat(pred_classes_all_levels, dim=0)
         pred_scores_all_levels = torch.cat(pred_scores_all_levels, dim=0)
 
-        # Perform Class-wise NMS
+        # Perform Non-Maximum Suppression (NMS) per class
         keep = nms(pred_boxes_all_levels, pred_scores_all_levels, iou_threshold=test_nms_thresh)
 
         # Filter the predictions
