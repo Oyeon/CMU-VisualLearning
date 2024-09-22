@@ -1,0 +1,530 @@
+\documentclass[11pt,addpoints,answers]{exam}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amsfonts}
+\usepackage{enumerate}
+\usepackage{graphicx}
+\usepackage{titling}
+\usepackage{url}
+\usepackage{xfrac}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{paralist}
+\usepackage{epstopdf}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{fancyvrb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{float}
+\usepackage{paralist}
+\usepackage[svgname]{xcolor}
+\usepackage{enumerate}
+\usepackage{array}
+\usepackage{times}
+\usepackage{url}
+\usepackage{comment}
+\usepackage{environ}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{caption}
+\usepackage[colorlinks=true,urlcolor=blue]{hyperref}
+\usepackage{listings}
+\usepackage{parskip} % For NIPS style paragraphs.
+\usepackage[compact]{titlesec} % Less whitespace around titles
+\usepackage[inline]{enumitem} % For inline enumerate* and itemize*
+\usepackage{datetime}
+\usepackage{comment}
+% \usepackage{minted}
+\usepackage{lastpage}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{tikz}
+\usetikzlibrary{shapes,decorations,bayesnet}
+%\usepackage{framed}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{cprotect}
+\usepackage{xcolor}
+\usepackage{verbatimbox}
+\usepackage[many]{tcolorbox}
+\usepackage{cancel}
+\usepackage{wasysym}
+\usepackage{mdframed}
+\usepackage{subcaption}
+\usetikzlibrary{shapes.geometric}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Formatting for \CorrectChoice of "exam" %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\CorrectChoiceEmphasis{}
+\checkedchar{\blackcircle}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Better numbering                        %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+\numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Common Math Commands                    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{mathabbreviations.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code highlighting with listings         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\definecolor{bluekeywords}{rgb}{0.13,0.13,1}
+\definecolor{greencomments}{rgb}{0,0.5,0}
+\definecolor{redstrings}{rgb}{0.9,0,0}
+\definecolor{light-gray}{gray}{0.95}
+
+\newcommand{\MYhref}[3][blue]{\href{#2}{\color{#1}{#3}}}%
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstdefinelanguage{Shell}{
+  keywords={tar, cd, make},
+  %keywordstyle=\color{bluekeywords}\bfseries,
+  alsoletter={+},
+  ndkeywords={python, py, javac, java, gcc, c, g++, cpp, .txt, octave, m, .tar},
+  %ndkeywordstyle=\color{bluekeywords}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{purple}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]",
+  backgroundcolor = \color{light-gray}
+}
+
+\lstset{columns=fixed, basicstyle=\ttfamily,
+    backgroundcolor=\color{light-gray},xleftmargin=0.5cm,frame=tlbr,framesep=4pt,framerule=0pt}
+
+\newcommand{\red}[1]{\textcolor{red}{#1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Custom box for highlights               %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Define box and box title style
+\tikzstyle{mybox} = [fill=blue!10, very thick,
+    rectangle, rounded corners, inner sep=1em, inner ysep=1em]
+
+% \newcommand{\notebox}[1]{
+% \begin{tikzpicture}
+% \node [mybox] (box){%
+%     \begin{minipage}{\textwidth}
+%     #1
+%     \end{minipage}
+% };
+% \end{tikzpicture}%
+% }
+
+\NewEnviron{notebox}{
+\begin{tikzpicture}
+\node [mybox] (box){
+    \begin{minipage}{\textwidth}
+        \BODY
+    \end{minipage}
+};
+\end{tikzpicture}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Commands showing / hiding solutions     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% To HIDE SOLUTIONS (to post at the website for students), set this value to 0: \def\issoln{0}
+\def\issoln{0}
+% Some commands to allow solutions to be embedded in the assignment file.
+\ifcsname issoln\endcsname \else \def\issoln{0} \fi
+% Default to an empty solutions environ.
+\NewEnviron{soln}{}{}
+% Default to an empty qauthor environ.
+\NewEnviron{qauthor}{}{}
+% Default to visible (but empty) solution box.
+\newtcolorbox[]{studentsolution}[1][]{%
+    breakable,
+    enhanced,
+    colback=white,
+    title=Solution,
+    #1
+}
+
+\if\issoln 1
+% Otherwise, include solutions as below.
+\RenewEnviron{soln}{
+    \leavevmode\color{red}\ignorespaces
+    \textbf{Solution} \BODY
+}{}
+\fi
+
+\if\issoln 1
+% Otherwise, include solutions as below.
+\RenewEnviron{solution}{}
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Commands for customizing the assignment %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\courseNum}{\href{https://visual-learning.cs.cmu.edu/}{16824}}
+\newcommand{\courseName}{\href{https://visual-learning.cs.cmu.edu/}{Visual Learning and Recognition}}
+\newcommand{\courseSem}{\href{https://visual-learning.cs.cmu.edu/}{Fall 2024}}
+\newcommand{\courseUrl}{{\url{https://piazza.com/cmu/fall2024/16824/}}}
+\newcommand{\hwNum}{Homework 1}
+\newcommand{\hwTopic}{Image Classification and Object Detection}
+\newcommand{\hwName}{\hwNum: \hwTopic}
+\newcommand{\outDate}{{Wed, 18 Sept 2024}}
+\newcommand{\dueDate}{{Wed, 2 Oct, 2024}}
+\newcommand{\instructorName}{{Jun-Yan Zhu}}
+\newcommand{\taNames}{{Hsu-kuang Chiu, Yunus Seker}}
+
+%\pagestyle{fancyplain}
+\lhead{\hwName}
+\rhead{\courseNum}
+\cfoot{\thepage{} of \numpages{}}
+
+\title{\textsc{\hwName}} % Title
+
+
+\author{}
+
+\date{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Useful commands for typesetting the questions %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand \expect {\mathbb{E}}
+\newcommand \mle [1]{{\hat #1}^{\rm MLE}}
+\newcommand \map [1]{{\hat #1}^{\rm MAP}}
+\newcommand \argmax {\operatorname*{argmax}}
+\newcommand \argmin {\operatorname*{argmin}}
+\newcommand \code [1]{{\tt #1}}
+\newcommand \datacount [1]{\#\{#1\}}
+\newcommand \ind [1]{\mathbb{I}\{#1\}}
+
+\newcommand{\blackcircle}{\tikz\draw[black,fill=black] (0,0) circle (1ex);}
+\renewcommand{\circle}{\tikz\draw[black] (0,0) circle (1ex);}
+
+\newcommand{\pts}[1]{\textbf{[#1 pts]}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document configuration %
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Don't display a date in the title and remove the white space
+\predate{}
+\postdate{}
+\date{}
+
+%%%%%%%%%%%%%%%%%%
+% Begin Document %
+%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+\section*{}
+\begin{center}
+  \textsc{\LARGE \hwNum} \\
+%   \textsc{\LARGE \hwTopic\footnote{Compiled on \today{} at \currenttime{}}} \\
+  \vspace{1em}
+  \textsc{\large \courseNum{} \courseName{} (\courseSem)} \\
+  %\vspace{0.25em}
+  \courseUrl\\
+  \vspace{1em}
+  RELEASED: \outDate \\
+  DUE: \dueDate \\
+  Instructor: \instructorName \\
+  TAs: \taNames
+\end{center}
+
+\section*{START HERE: Instructions}
+\begin{itemize}
+\item \textbf{Collaboration policy:} All are encouraged to work together BUT you must do your own work (code and write up). If you work with someone, please include their name in your write-up and cite any code that has been discussed. If we find highly identical write-ups or code or lack of proper accreditation of collaborators, we will take action according to strict university policies. See the \href{hhttps://www.cmu.edu/policies/student-and-student-life/academic-integrity.html}{Academic Integrity Section} detailed in the initial lecture for more information.
+
+\item\textbf{Late Submission Policy:} There are a \textbf{total of 5} late days across all homework submissions. Submissions that use additional late days will incur a 10\% penalty per late day.
+
+\item\textbf{Submitting your work:}
+
+\begin{itemize}
+
+\item We will be using Gradescope (\url{https://gradescope.com/}) to submit the Problem Sets. Please use the provided template only. You do \textbf{not} need any additional packages and using them is \textbf{strongly discouraged}. Submissions must be written in LaTeX. All submissions not adhering to the template will not be graded and receive a zero. 
+\item \textbf{Deliverables:} Please submit all the \texttt{.py} files. Add all relevant plots and text answers in the boxes provided in this file. To include plots you can simply modify the already provided latex code. Submit the compiled \texttt{.pdf} report as well.
+\end{itemize}
+\end{itemize}
+\emph{NOTE: Partial points will be given for implementing parts of the homework even if you don't get the mentioned accuracy as long as you include partial results in this pdf.}
+\clearpage
+
+\section{PASCAL multi-label classification (20 points)}
+In this question, we will try to recognize objects in natural images from the PASCAL VOC dataset using a simple CNN.
+\begin{itemize}
+    \item \textbf{Setup:}  Run the command \texttt{bash q1\_q2\_classification/download\_data.sh} to download the train and test splits. The images will be downloaded in \\
+\texttt{data/VOCdevkit/VOC2007/JPEGImages} and the corresponding annotations are in \\
+{\texttt{data/VOCdevkit/VOC2007/Annotations}}. \texttt{voc\_dataset.py} contains code for loading the data. Fill in the method \texttt{preload\_anno} in to preload annotations from XML files. Inside \texttt{\_\_getitem\_\_} add random augmentations to the image before returning it using \\
+\href{https://pytorch.org/vision/stable/transforms.html}{[TORCHVISION.TRANSFORMS]}. There are lots of options and experimentation is encouraged. Implement a suitable loss function inside \texttt{trainer.py} (you can pick one from \href{https://pytorch.org/docs/stable/nn.html#loss-functions}{here}). Also, define the correct dimension in \texttt{simple\_cnn.py}. 
+\item \textbf{Question:} The file \texttt{train\_q1.py} launches the training. Please choose the correct hyperparameters in lines 13-19. You should get a mAP of around 0.22 within 5 epochs.
+\item \textbf{Deliverables:} 
+    \begin{itemize}
+        \item The code should log values to a Tensorboard. Compare the \texttt{Loss/Train} and \texttt{mAP} curves of the model with and without data augmentations in the boxes below. You should include the two curves in a single plot for each metric.
+
+        \begin{figure}[H]
+            \centering
+            % TODO: put your plot here.
+            \includegraphics{example-image-a}
+            \caption{\texttt{Loss/Train} with and without data augmentations.}
+            \label{fig:q1_1_compare_loss}
+        \end{figure}
+        
+        \begin{figure}[H]
+            \centering
+            % TODO: put your plot here.
+            \includegraphics{example-image-a}
+            \caption{\texttt{mAP} with and without data augmentations.}
+            \label{fig:q1_1_compare_map}
+        \end{figure}
+        
+        \item Report the \texttt{Loss/Train}, \texttt{mAP} and \texttt{learning\_rate} curves of your best model logged to Tensorboard in the boxes below.
+        
+        \begin{figure}[H]
+            \centering
+            % TODO: put your plot here.
+            \includegraphics{example-image-a}
+            \caption{\texttt{Loss/Train} for simple CNN}
+            \label{fig:q1_2_loss}
+        \end{figure}
+        
+        \begin{figure}[H]
+            \centering
+            % TODO: put your plot here.
+            \includegraphics{example-image-a}
+            \caption{\texttt{mAP} for simple CNN}
+            \label{fig:q1_2_map}
+        \end{figure}
+        
+        \begin{figure}[H]
+            \centering
+            % TODO: put your plot here.
+            \includegraphics{example-image-a}
+            \caption{\texttt{learning\_rate} for simple CNN}
+            \label{fig:q1_2_lr}
+        \end{figure}
+        
+        \item Describe the hyperparameters you experimented with and the effects they had on the train and test metrics.
+
+        \begin{solution}
+        \\
+        \end{solution}
+    \end{itemize}
+\end{itemize}
+
+\clearpage
+
+\section{Even deeper! Resnet18 for PASCAL classification (20 pts)}
+
+Hopefully, we get much better accuracy with the deeper models! Since 2012, much deeper architectures have been proposed. \href{https://arxiv.org/abs/1512.03385}{ResNet} is one of the popular ones.
+
+\begin{itemize}
+    \item \textbf{Setup:} Write a network module for the Resnet-18 architecture (refer to the original paper) inside \texttt{train\_q2.py}. You can use Resnet-18 available in \texttt{torchvision.models} for this section. Use ImageNet pre-trained weights for all layers except the last one. 
+    \item \textbf{Question:} The file \texttt{train\_q2.py} launches the training. Tune hyperparameters to get mAP around 0.8 in 50 epochs.
+    \item \textbf{Deliverables:} Paste plots for the following in the box below.
+    \begin{itemize}
+        \item Include curves of training loss, test MAP, learning rate, and histogram of gradients from Tensorboard for \texttt{layer1.1.conv1.weight} and \texttt{layer4.0.bn2.bias}. 
+        
+        \begin{figure}[H]
+        \centering
+        % TODO: put your plot here.
+        \includegraphics{example-image-b}
+        \caption{\texttt{learning\_rate} for ResNet}
+        \label{fig:q2_learning_rate}
+        \end{figure}
+        
+        \begin{figure}[H]
+        \centering
+        % TODO: put your plot here.
+        \includegraphics{example-image-b}
+        \caption{\texttt{mAP} for ResNet}
+        \label{fig:q2_map}
+        \end{figure}
+        
+        \begin{figure}[H]
+        \centering
+        % TODO: put your plot here.
+        \includegraphics{example-image-b}
+        \caption{\texttt{Loss/Train} for ResNet}
+        \label{fig:q2_training_loss}
+        \end{figure}
+
+        \item How does the test mAP and training loss change over time? Why do you think this is happening?
+
+        \begin{solution}
+        \\
+        \end{solution}
+        
+        \begin{figure}[H]
+        \centering
+        % TODO: put your plot here.
+        \includegraphics{example-image-b}
+        \caption{Histogram of \texttt{Conv1} layer}
+        \label{fig:q2_histogram_conv1}
+        \end{figure}
+        
+        \begin{figure}[H]
+        \centering
+        % TODO: put your plot here.
+        \includegraphics{example-image-b}
+        \caption{Histogram of \texttt{BN4} layer}
+        \label{fig:q2_bn}
+        \end{figure}
+
+        \item Compare the two histogram plots. How do they change over time? Why do you think this is happening?
+
+        \begin{solution}
+        \\
+        \end{solution}
+        
+        \item We can also visualize how the feature representations specialize for different classes. Take 1000 random images from the test set of PASCAL, and extract ImageNet (finetuned) features from those images. Compute a 2D t-SNE (use \href{https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html}{sklearn}) projection of the features, and plot them with each feature color-coded by the GT class of the corresponding image. If multiple objects are active in that image, compute the color as the ``mean” color of the different classes active in that image. Add a legend explaining the mapping from color to object class. 
+
+        \begin{figure}[H]
+        \centering
+        % TODO: put your plot here.
+        \includegraphics{example-image-b}
+        \caption{t-SNE}
+        \label{fig:q2_tsne}
+        \end{figure}
+
+        \item Briefly describe what you observe in the t-SNE plot. Does this match your expectations?
+
+        \begin{solution}
+        \\
+        \end{solution}
+        
+    \end{itemize}
+\end{itemize}
+
+\clearpage
+\section{Supervised Object Detection: FCOS (60 points)}
+In this problem, we'll be implementing supervised {\href{https://arxiv.org/abs/1904.01355}{Fully Convolutional One-stage Object Detection (FCOS)}}. 
+
+\begin{itemize}
+    \item \textbf{Setup}. This question will require you to implement several functions in \texttt{detection\_utils.py} and \texttt{one\_stage\_detector.py} in the \texttt{detection} folder. Instructions for what code you need to write are in the \texttt{README} in the \texttt{detection} folder of the assignment.
+    
+    We have also provided a testing suite in \texttt{test\_object\_detection.py}. First, run the test suite
+    and ensure that all the tests are either skipped or passed. Make sure that the Tensorboard visualization works by running `python3 train.py --visualize\_gt`; this should upload some examples of the training data with bounding boxes to Tensorboard. Make sure everything is set up properly before moving on.
+
+    Then, run the following to install the \texttt{mAP} computation software we will be using.
+    \begin{lstlisting}[language=Shell]
+        cd <path/to/hw/>/detection
+        pip install wget  
+        rm -rf mAP
+        git clone https://github.com/Cartucho/mAP.git
+        rm -rf mAP/input/*
+    \end{lstlisting}
+
+    Next, open \texttt{detection/one\_stage\_detector.py} and \texttt{detection/detection\_utils.py}. At the top of the files are detailed
+    instructions for where and what code you need to write. Follow the \texttt{README} and all the instructions for implementation. 
+
+    \item \textbf{Deliverables.}
+    \begin{itemize}
+        \item It's always a good idea to check if your model can overfit on a small subset of the data, otherwise there may be some major bugs in the code. Train your FCOS model on a small subset of the training data and make sure the model can overfit. Include the loss curve from over-fitting below.
+
+        % TODO ADD YOUR FIGURE HERE.
+        \begin{figure}[H]
+            \centering
+            \includegraphics{example-image-c}
+            \caption{Overfitting Training Curve}
+            \label{fig:overfit_plot}
+        \end{figure}
+        
+        \item Next, train FCOS on the full training set and include the loss curve below.
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics{example-image-c}
+            \caption{Full Training Curve}
+            \label{fig:full_loss_plot}
+        \end{figure}
+
+        \item Include the plot of the model's class-wise and average mAP. If everything is correct, your implementation should reach a mAP of at least 20.
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics{example-image-c}
+            \caption{mAP plots}
+            \label{fig:final_mAP}
+        \end{figure}
+        
+        \item Paste a screenshot of the Tensorboard visualizations of your model inference results from running inference with the \texttt{--test\_inference} flag on.
+
+        \begin{figure}[H]
+            \centering
+            \includegraphics{example-image-c}
+            \caption{Tensorboard Inference Visualization}
+            \label{fig:inference_results}
+        \end{figure}
+
+        \item What can you conclude from the above visualizations? When does the model succeed or fail? How can you improve the results for the failure cases?
+
+        \begin{solution}
+        \\
+        \end{solution}
+
+    \end{itemize}
+\end{itemize}
+
+\clearpage
+
+\textbf{Collaboration Survey} Please answer the following:
+
+\begin{enumerate}
+    \item Did you receive any help whatsoever from anyone in solving this assignment?
+    \begin{checkboxes}
+     \choice Yes
+     \choice No
+    \end{checkboxes}
+    \begin{itemize}
+        \item If you answered `Yes', give full details:
+        \item (e.g. “Jane Doe explained to me what is asked in Question 3.4”)
+    \end{itemize}
+
+    \begin{tcolorbox}[fit,height=3cm,blank, borderline={1pt}{-2pt},nobeforeafter]
+    %Input your solution here.  Do not change any of the specifications of this solution box.
+    \end{tcolorbox}
+
+    \item Did you give any help whatsoever to anyone in solving this assignment?
+    \begin{checkboxes}
+     \choice Yes
+     \choice No\
+    \end{checkboxes}
+    \begin{itemize}
+        \item If you answered `Yes', give full details:
+        \item (e.g. “I pointed Joe Smith to section 2.3 since he didn’t know how to proceed with Question 2”)
+    \end{itemize}
+
+    \begin{tcolorbox}[fit,height=3cm,blank, borderline={1pt}{-2pt},nobeforeafter]
+    %Input your solution here.  Do not change any of the specifications of this solution box.
+    \end{tcolorbox}
+
+    \item Note that copying code or writeup even from a collaborator or anywhere on the internet violates the \href{hhttps://www.cmu.edu/policies/student-and-student-life/academic-integrity.html}{Academic Integrity Code of Conduct}.
+\end{enumerate}
+
+\end{document}
