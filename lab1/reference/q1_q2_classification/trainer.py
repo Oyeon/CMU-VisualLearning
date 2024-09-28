@@ -53,7 +53,19 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             # Function Outputs:
             #   - `output`: Computed loss, a single floating point number
             ##################################################################
-            loss = 0
+            # Numerically stable Binary Cross-Entropy Loss implementation
+            # Compute max(output, 0) for numerical stability
+            max_val = torch.clamp(output, min=0)
+            # Compute the loss component for positive targets
+            loss_pos = target * (max_val - output)
+            # Compute the loss component for negative targets
+            loss_neg = (1 - target) * (torch.log(1 + torch.exp(-max_val)))
+            # Combine the positive and negative losses
+            loss = loss_pos + loss_neg
+            # Multiply by weights
+            loss = loss * wgt
+            # Compute the mean loss over the batch
+            loss = loss.mean()
             ##################################################################
             #                          END OF YOUR CODE                      #
             ##################################################################
@@ -62,7 +74,8 @@ def train(args, model, optimizer, scheduler=None, model_name='model'):
             
             if cnt % args.log_every == 0:
                 writer.add_scalar("Loss/train", loss.item(), cnt)
-                print('Train Epoch: {} [{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch, cnt, 100. * batch_idx / len(train_loader), loss.item()))
+                print('Train Epoch: {} [{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                    epoch, cnt, 100. * batch_idx / len(train_loader), loss.item()))
                 
                 # Log gradients
                 for tag, value in model.named_parameters():

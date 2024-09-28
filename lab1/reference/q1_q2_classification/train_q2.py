@@ -17,7 +17,8 @@ class ResNet(nn.Module):
         ##################################################################
         # TODO: Define a FC layer here to process the features
         ##################################################################
-        pass
+        self.resnet.fc = nn.Identity()  # Remove the original FC layer
+        self.fc = nn.Linear(self.resnet.fc.in_features, num_classes)
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -27,7 +28,9 @@ class ResNet(nn.Module):
         ##################################################################
         # TODO: Return raw outputs here
         ##################################################################
-        pass
+        features = self.resnet(x)
+        outputs = self.fc(features)
+        return outputs
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################
@@ -45,16 +48,16 @@ if __name__ == "__main__":
     # You should experiment and choose the correct hyperparameters
     # You should get a map of around 50 in 50 epochs
     ##################################################################
-    # args = ARGS(
-    #     epochs=50,
-    #     inp_size=64,
-    #     use_cuda=True,
-    #     val_every=70
-    #     lr=# TODO,
-    #     batch_size=#TODO,
-    #     step_size=#TODO,
-    #     gamma=#TODO
-    # )
+    args = ARGS(
+        epochs=50,
+        inp_size=224,
+        use_cuda=torch.cuda.is_available(),
+        val_every=10,
+        lr=0.001,          # Learning rate
+        batch_size=64,     # Batch size
+        step_size=20,      # Step size for scheduler
+        gamma=0.1          # Gamma for scheduler
+    )
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################
@@ -67,8 +70,8 @@ if __name__ == "__main__":
     # (except the last layer). You are free to use torchvision.models 
     ##################################################################
 
-    model = ResNet(len(VOCDataset.CLASS_NAMES)).to(args.device)
-
+    model = ResNet(num_classes=len(VOCDataset.CLASS_NAMES)).to(args.device)
+    
     ##################################################################
     #                          END OF YOUR CODE                      #
     ##################################################################
