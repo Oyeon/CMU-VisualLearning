@@ -5,7 +5,7 @@ description = "Visual Learning Lab 1"
 authors = ["Owen <oyeonk@andrew.cmu.edu>"]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
+python = ">=3.10,<3.13"
 absl-py = "==1.4.0"
 aiohttp = "*"
 aiosignal = "*"
@@ -85,13 +85,11 @@ scipy = "*"
 setproctitle = "*"
 six = "==1.16.0"
 smmap = "*"
-tensorboard = "==2.11.2"
-tensorboard-data-server = "==0.6.1"
 tensorboard-plugin-wit = "==1.8.1"
 threadpoolctl = "==3.1.0"
-torch = { version = "==1.12.1+cu113", source = "custom-pytorch" }
-torchaudio = { version = "==0.12.1+cu113", source = "custom-pytorch" }
-torchvision = { version = "==0.13.1+cu113", source = "custom-pytorch" }
+torch = { url = "https://download.pytorch.org/whl/cu113/torch-1.12.1%2Bcu113-cp310-cp310-linux_x86_64.whl" }
+torchaudio = { url = "https://download.pytorch.org/whl/cu113/torchaudio-0.12.1%2Bcu113-cp310-cp310-linux_x86_64.whl" }
+torchvision = { url = "https://download.pytorch.org/whl/cu113/torchvision-0.13.1%2Bcu113-cp310-cp310-linux_x86_64.whl" }
 tornado = "*"
 tqdm = "*"
 traitlets = "*"
@@ -107,11 +105,8 @@ opencv-python = "^4.10.0.84"  # Added opencv-python
 tk = "^0.1.0"
 torchmetrics = "^1.4.2"
 pycocotools = "^2.0.8"
-
-[[tool.poetry.source]]
-name = "custom-pytorch"
-url = "https://download.pytorch.org/whl/cu113"
-priority = "supplemental"
+tensorboard = "^2.17.0"
+tensorflow = "^2.17.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

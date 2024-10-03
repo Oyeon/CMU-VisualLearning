@@ -67,22 +67,6 @@ class ARGS(object):
         return torch.device("cuda" if self.use_cuda else "cpu")
 
 
-def get_data_loader(name='voc', train=True, batch_size=64, split='train', inp_size=224):
-    if name == 'voc':
-        from voc_dataset import VOCDataset
-        dataset = VOCDataset(split, inp_size)
-    else:
-        raise NotImplementedError
-
-    loader = DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=train,
-        num_workers=4,
-    )
-    return loader
-
-
 def compute_ap(gt, pred, valid, average=None):
     # ! Do not modify the code in this function
     
@@ -143,3 +127,126 @@ def eval_dataset_map(model, device, test_loader):
     mAP = np.mean(AP)
 
     return AP, mAP
+
+
+def get_data_loader(name='voc', train=True, batch_size=64, split='train', inp_size=224):
+    if name == 'voc':
+        from voc_dataset import VOCDataset
+        dataset = VOCDataset(split, inp_size)
+    else:
+        raise NotImplementedError
+
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=train,
+        num_workers=4,
+    )
+    return loader
+
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
+# import os
+# import torch
+# from torch.utils.data import DataLoader
+# from detection.detection_helper import VOC2007DetectionTiny  # Updated import
+# from typing import Any
+
+# class ARGS:
+#     def __init__(
+#         self,
+#         epochs: int,
+#         inp_size: int,
+#         use_cuda: bool,
+#         device: torch.device,
+#         val_every: int,
+#         lr: float,
+#         batch_size: int,
+#         test_batch_size: int,
+#         step_size: int,
+#         gamma: float,
+#         save_freq: int,
+#         save_at_end: bool,
+#         log_every: int
+#     ):
+#         self.epochs = epochs
+#         self.inp_size = inp_size
+#         self.use_cuda = use_cuda
+#         self.device = device
+#         self.val_every = val_every
+#         self.lr = lr
+#         self.batch_size = batch_size
+#         self.test_batch_size = test_batch_size
+#         self.step_size = step_size
+#         self.gamma = gamma
+#         self.save_freq = save_freq
+#         self.save_at_end = save_at_end
+#         self.log_every = log_every
+
+# def custom_collate_fn(batch):
+#     """
+#     Custom collate function to handle batching of images and ground truth boxes.
+
+#     Args:
+#         batch (list): List of tuples (image, gt_boxes)
+
+#     Returns:
+#         images (torch.Tensor): Batched images tensor.
+#         gt_boxes (torch.Tensor): Batched ground truth boxes tensor.
+#     """
+#     images, gt_boxes = zip(*batch)
+#     images = torch.stack(images, dim=0)  # Shape: (B, C, H, W)
+#     gt_boxes = torch.stack(gt_boxes, dim=0)  # Shape: (B, 40, 5)
+#     return images, gt_boxes
+
+# def get_data_loader(dataset_dir: str, train: bool = True, batch_size: int = 32, split: str = 'trainval', inp_size: int = 224) -> DataLoader:
+#     """ 
+#     Args:
+#         dataset_dir (str): Directory of the dataset.
+#         train (bool): Whether to shuffle the data.
+#         batch_size (int): Number of samples per batch.
+#         split (str): Dataset split - 'train', 'val', 'trainval', or 'test'.
+#         inp_size (int): Input image size.
+#     Returns:
+#         DataLoader object
+#     """
+#     download = True if split in ["train", "trainval"] and train else False
+#     dataset = VOC2007DetectionTiny(
+#         dataset_dir=dataset_dir, split=split, download=download, image_size=inp_size
+#     )
+#     return DataLoader(
+#         dataset,
+#         batch_size=batch_size,
+#         shuffle=train,
+#         collate_fn=custom_collate_fn,
+#         num_workers=4  # Adjust based on your system
+#     )
+
+# def eval_dataset_map(model: torch.nn.Module, device: torch.device, data_loader: DataLoader) -> (float, float):
+#     """
+#     Evaluate model on the dataset and compute mAP.
+
+#     Args:
+#         model (nn.Module): Trained model.
+#         device (torch.device): Device to perform computation on.
+#         data_loader (DataLoader): DataLoader for the evaluation dataset.
+
+#     Returns:
+#         ap (float): Average Precision for the current AP.
+#         map (float): Mean Average Precision across all classes.
+#     """
+#     # Placeholder implementation:
+#     # Implement actual evaluation logic here.
+#     ap = 0.0
+#     map = 0.0
+#     return ap, map

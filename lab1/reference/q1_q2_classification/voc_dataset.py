@@ -80,12 +80,16 @@ class VOCDataset(Dataset):
 
         return label_list        
 
-   def get_random_augmentations(self):
+    def get_random_augmentations(self):
         if self.split == 'train':
             augmentations = [
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomRotation(15),
-                transforms.RandomResizedCrop(self.size, scale=(0.8, 1.0))
+                transforms.RandomResizedCrop(self.size, scale=(0.8, 1.0)),
+                transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
+                transforms.RandomGrayscale(p=0.1),
+                transforms.RandomPerspective(distortion_scale=0.5, p=0.5),
+                transforms.RandomAffine(degrees=0, translate=(0.1, 0.1))
             ]
         else:
             # For validation and test, use center crop
@@ -107,9 +111,11 @@ class VOCDataset(Dataset):
 
         img = Image.open(fpath).convert('RGB')  # Ensure image is in RGB
 
+        # augmentations = self.get_random_augmentations()
+
         trans = transforms.Compose([
-            transforms.Resize(self.size),
-            *self.get_random_augmentations(),
+            transforms.Resize((self.size, self.size)),  # Ensure all images are resized to the same size
+            # *augmentations,  # Apply augmentations
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.457, 0.407], std=[0.5, 0.5, 0.5]),
         ])
@@ -118,6 +124,6 @@ class VOCDataset(Dataset):
         lab_vec, wgt_vec = self.anno_list[index] 
         image = torch.FloatTensor(img)
         label = torch.FloatTensor(lab_vec)
-        wgt = torch.FloatTensor(wgt_vec)
+        wgt = torch.FloatTensor(wgt_vec)  # Corrected this line
 
         return image, label, wgt

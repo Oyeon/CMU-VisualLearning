@@ -19,14 +19,14 @@ if __name__ == "__main__":
     # You should get a map of around 22 in 5 epochs
     ##################################################################
     args = ARGS(
-        epochs=10,
+        epochs=6,
         inp_size=64,
         use_cuda=True,
         val_every=70,
-        lr=0.001,          # Learning rate
-        batch_size=32,     # Batch size
-        step_size=5,       # Step size for scheduler
-        gamma=0.1          # Gamma for scheduler
+        lr=0.001,          # 0.0005, 0.001
+        batch_size=128,     # 128, 32
+        step_size=16,       # 4, 16
+        gamma=1         # 0.5, 1
     )
     ##################################################################
     #                          END OF YOUR CODE                      #

@@ -25,24 +25,39 @@ def get_fc(inp_dim, out_dim, non_linear='relu'):
 
 
 class SimpleCNN(nn.Module):
-    """
-    Model definition
-    """
     def __init__(self, num_classes=10, inp_size=28, c_dim=1):
         super().__init__()
         self.num_classes = num_classes
+        self.inp_size = inp_size  # Store input size
         self.conv1 = nn.Conv2d(c_dim, 32, 5, padding=2)
         self.conv2 = nn.Conv2d(32, 64, 5, padding=2)
         self.nonlinear = nn.ReLU()
         self.pool1 = nn.AvgPool2d(2, 2)
         self.pool2 = nn.AvgPool2d(2, 2)
 
-        # TODO set the correct dim here
-        self.flat_dim = None
+        # Calculate the correct flat_dim based on the input size
+        self.flat_dim = self._get_flat_dim(c_dim, inp_size)
 
-        # Sequential is another way of chaining the layers.
         self.fc1 = nn.Sequential(*get_fc(self.flat_dim, 128, 'none'))
         self.fc2 = nn.Sequential(*get_fc(128, num_classes, 'none'))
+
+    def _get_flat_dim(self, c_dim, inp_size):
+        """
+        Calculate the flat_dim based on the input size and channels.
+        """
+        dummy_input = torch.zeros(1, c_dim, inp_size, inp_size)  # (batch size, channels, height, width)
+
+        x = self.conv1(dummy_input)
+        x = self.nonlinear(x)
+        x = self.pool1(x)
+
+        x = self.conv2(x)
+        x = self.nonlinear(x)
+        x = self.pool2(x)
+
+        flat_dim = x.numel()  # Calculate the total number of elements
+        print(f"Calculated flat_dim: {flat_dim}")  # Debugging output
+        return flat_dim
 
     def forward(self, x):
         """

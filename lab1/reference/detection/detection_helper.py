@@ -148,6 +148,10 @@ class VOC2007DetectionTiny(torch.utils.data.Dataset):
         gt_classes = torch.Tensor([self.class_to_idx[inst["name"]] for inst in ann])
         gt_classes = gt_classes.unsqueeze(1)  # (N, 1)
 
+        # print(f"Image index: {index}")
+        # print(f"GT boxes: {gt_boxes}")
+        # print(f"GT classes: {gt_classes}")        
+
         # Record original image size before transforming.
         original_width, original_height = image.size
 
@@ -229,12 +233,32 @@ def train_detector(
 
     # Optimizer: use SGD with momentum.
     # Use SGD with momentum:
-    optimizer = optim.SGD(
-        filter(lambda p: p.requires_grad, detector.parameters()),
+    
+    # optimizer = optim.SGD(
+    #     filter(lambda p: p.requires_grad, detector.parameters()),
+    #     momentum=0.9,
+    #     lr=learning_rate,
+    #     weight_decay=weight_decay,
+    # )
+
+    optimizer = torch.optim.SGD(
+        [
+            {'params': detector.backbone_fpn.parameters(), 'lr': 0.001},
+            {'params': detector.prediction_heads.parameters(), 'lr': 0.001 * 0.1},
+        ],
         momentum=0.9,
-        lr=learning_rate,
         weight_decay=weight_decay,
     )
+
+
+    # optimizer = torch.optim.AdamW(
+    #     [
+    #         {"params": detector.backbone_fpn.parameters(), "lr": learning_rate * 0.1},
+    #         {"params": detector.prediction_heads.parameters(), "lr": learning_rate},
+    #     ],
+    #     weight_decay=weight_decay,
+    # )    
+
     # LR scheduler: use step decay at 70% and 90% of training iters.
     lr_scheduler = optim.lr_scheduler.MultiStepLR(
         optimizer, milestones=[int(0.6 * max_iters), int(0.9 * max_iters)]
@@ -260,8 +284,18 @@ def train_detector(
         losses = {k: v for k, v in losses.items() if "loss" in k}
 
         optimizer.zero_grad()
-        total_loss = sum(losses.values())
-        total_loss.backward()
+        total_loss = sum(losses.values())     
+        total_loss.backward()      
+        # Debugging: Check gradient norms
+        # for name, param in detector.named_parameters():
+        #     if param.grad is not None:
+        #         grad_norm = param.grad.data.norm()
+        #         if 'pred_cls' in name:
+        #             print(f"Gradient norm for {name}: {grad_norm}")
+        #     else:
+        #         print(f"No gradient for {name}")
+        torch.nn.utils.clip_grad_norm_(detector.parameters(), max_norm=5.0)
+
         optimizer.step()
         lr_scheduler.step()
         for key, value in losses.items():
