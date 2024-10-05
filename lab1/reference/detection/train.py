@@ -37,7 +37,7 @@ else:
     DEVICE = torch.device("cpu")
 
 NUM_CLASSES = 20
-BATCH_SIZE = 512
+BATCH_SIZE = 256
 IMAGE_SHAPE = (224, 224)
 NUM_WORKERS = 12
 DATASET_PATH = "../data"
