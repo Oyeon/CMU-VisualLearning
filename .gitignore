@@ -4,7 +4,7 @@ lab2/data_gen/
 lab2/datasets/ 
 lab2/diffusion/epoch_199.pth
 lab2/myenv
-
+lab2/gan/data_gan/
 # Allow specific file types if needed
 !*.csv
 !*.json

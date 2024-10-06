@@ -5,6 +5,7 @@ myenv/
 diffusion/data_ddim/
 diffusion/data_ddpm/
 vae/data/
+gan/data_gan/
 
 # Ignore model checkpoints
 *.pth
