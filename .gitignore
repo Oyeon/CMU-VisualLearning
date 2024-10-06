@@ -14,7 +14,6 @@ lab2/generative-modeling/diffusion/epoch_199.pth
 *.bak
 
 # Ignore hidden files and directories
-.*
 !.gitignore
 
 # Ignore specific directories
