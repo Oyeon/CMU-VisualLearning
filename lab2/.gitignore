@@ -1,0 +1,14 @@
+# Ignore virtual environment
+myenv/
+
+# Ignore data directories
+diffusion/data_ddim/
+diffusion/data_ddpm/
+vae/data/
+
+# Ignore model checkpoints
+*.pth
+
+# Ignore attributes.txt if not needed
+attributes.txt
+

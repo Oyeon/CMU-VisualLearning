@@ -1,9 +1,9 @@
 # Ignore all files in the data directory
 lab1/reference/data/
-lab2/generative-modeling/data_gen/ 
-lab2/generative-modeling/datasets/ 
-lab2/generative-modeling/diffusion/epoch_199.pth
-lab2/generative-modeling/myenv
+lab2/data_gen/ 
+lab2/datasets/ 
+lab2/diffusion/epoch_199.pth
+lab2/myenv
 
 # Allow specific file types if needed
 !*.csv

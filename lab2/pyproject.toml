@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "generative-modeling"
+version = "0.1.0"
+description = ""
+authors = ["Oyeon <data0311@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+torch = "^2.4.1"
+torchvision = "^0.19.1"
+numpy = "^2.1.2"
+matplotlib = "^3.9.2"
+gdown = "^5.2.0"
+tqdm = "^4.66.5"
+clean-fid = "^0.1.35"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

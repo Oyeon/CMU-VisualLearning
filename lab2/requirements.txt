@@ -1,0 +1,7 @@
+torch
+torchvision
+numpy
+matplotlib
+gdown
+tqdm
+clean-fid
