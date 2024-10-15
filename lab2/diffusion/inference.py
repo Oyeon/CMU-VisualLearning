@@ -16,7 +16,8 @@ def get_fid(gen, dataset_name, dataset_resolution, z_dimension, batch_size, num_
         # Convert images to [0, 255] range
         images = (images * 255).clamp(0, 255).byte()
         # Convert images to NumPy arrays
-        return images.permute(0, 2, 3, 1).cpu().numpy()
+        # return images.permute(0, 2, 3, 1).cpu().numpy()
+        return images
 
     score = cleanfid.compute_fid(
         gen=gen_fn,

@@ -82,6 +82,26 @@ def vis_recons(model, x, _file):
 
     save_samples(reconstructions, _file+'_recons.png')
 
+# def vis_recons(model, x, _file):
+#     with torch.no_grad():
+#         x = preprocess_data(x)
+#         enc_out = model.encoder(x)
+#         if isinstance(enc_out, tuple):
+#             mu, _ = enc_out
+#             z = mu  # Use mean for reconstruction
+#         else:
+#             z = enc_out
+#         x_recon = torch.clamp(model.decoder(z), -1, 1)
+
+#     # Scale back to [0, 1]
+#     reconstructions = torch.stack((x, x_recon), dim=1).view(-1, 3, 32, 32)
+#     reconstructions = (reconstructions + 1) / 2  # Scale from [-1, 1] to [0, 1]
+#     reconstructions = reconstructions.clamp(0, 1)
+
+#     reconstructions = reconstructions.permute(0, 2, 3, 1).cpu().numpy() * 255
+#     save_samples(reconstructions, _file + '_recons.png')
+    
+
 def save_plot(x, y, xlabel, ylabel, title, filename):
     plt.plot(x, y)
     plt.xlabel(xlabel)

@@ -71,8 +71,8 @@ class VAEEncoder(Encoder):
         x = self.convs(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        mu, log_std = torch.chunk(x, 2, dim=1)
-        return mu, log_std
+        mu, log_var = torch.chunk(x, 2, dim=1)
+        return mu, log_var
         ##################################################################
         #                          END OF YOUR CODE                      #
         ##################################################################

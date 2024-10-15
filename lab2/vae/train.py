@@ -14,48 +14,82 @@ import time
 import os
 from utils import *
 
+# def ae_loss(model, x):
+#     ##################################################################
+#     # TODO 2.2: Fill in MSE loss between x and its reconstruction.
+#     ##################################################################
+#     z = model.encoder(x)
+#     x_recon = model.decoder(z)
+#     loss = F.mse_loss(x_recon, x)
+#     ##################################################################
+#     #                          END OF YOUR CODE                      #
+#     ##################################################################
+
+#     return loss, OrderedDict(recon_loss=loss)
+
+# def vae_loss(model, x, beta = 1):
+#     """
+#     TODO 2.5 : Fill in recon_loss and kl_loss.
+#     NOTE: For the kl loss term for the VAE, implement the loss in closed form, you can find the formula here:
+#     (https://stats.stackexchange.com/questions/318748/deriving-the-kl-divergence-loss-for-vaes).
+#     return loss, {recon_loss = loss}
+#     """
+#     ##################################################################
+#     # TODO 2.5: Fill in recon_loss and kl_loss.
+#     # NOTE: For the kl loss term for the VAE, implement the loss in
+#     # closed form, you can find the formula here:
+#     # (https://stats.stackexchange.com/questions/318748/deriving-the-kl-divergence-loss-for-vaes).
+#     ##################################################################
+#     mu, log_std = model.encoder(x)
+#     std = torch.exp(log_std)
+#     eps = torch.randn_like(std)
+#     z = mu + eps * std
+
+#     x_recon = model.decoder(z)
+#     recon_loss = F.mse_loss(x_recon, x)
+
+#     kl_loss = -0.5 * torch.sum(1 + 2 * log_std - mu.pow(2) - torch.exp(2 * log_std), dim=1)
+#     kl_loss = kl_loss.mean()
+
+#     total_loss = recon_loss + beta * kl_loss
+#     ##################################################################
+#     #                          END OF YOUR CODE                      #
+#     ##################################################################
+#     return total_loss, OrderedDict(recon_loss=recon_loss, kl_loss=kl_loss)
+
 def ae_loss(model, x):
-    ##################################################################
-    # TODO 2.2: Fill in MSE loss between x and its reconstruction.
-    ##################################################################
     z = model.encoder(x)
     x_recon = model.decoder(z)
-    loss = F.mse_loss(x_recon, x)
-    ##################################################################
-    #                          END OF YOUR CODE                      #
-    ##################################################################
-
+    # Compute MSE loss per sample
+    loss = F.mse_loss(x_recon, x, reduction='none')
+    # Sum over all elements except batch dimension
+    loss = loss.view(loss.size(0), -1).sum(dim=1)
+    # Average over batch dimension
+    loss = loss.mean()
     return loss, OrderedDict(recon_loss=loss)
 
-def vae_loss(model, x, beta = 1):
-    """
-    TODO 2.5 : Fill in recon_loss and kl_loss.
-    NOTE: For the kl loss term for the VAE, implement the loss in closed form, you can find the formula here:
-    (https://stats.stackexchange.com/questions/318748/deriving-the-kl-divergence-loss-for-vaes).
-    return loss, {recon_loss = loss}
-    """
-    ##################################################################
-    # TODO 2.5: Fill in recon_loss and kl_loss.
-    # NOTE: For the kl loss term for the VAE, implement the loss in
-    # closed form, you can find the formula here:
-    # (https://stats.stackexchange.com/questions/318748/deriving-the-kl-divergence-loss-for-vaes).
-    ##################################################################
-    mu, log_std = model.encoder(x)
-    std = torch.exp(log_std)
+
+def vae_loss(model, x, beta=1):
+    mu, log_var = model.encoder(x)
+    std = torch.exp(0.5 * log_var)
     eps = torch.randn_like(std)
     z = mu + eps * std
 
     x_recon = model.decoder(z)
-    recon_loss = F.mse_loss(x_recon, x)
+    # Compute MSE loss per sample
+    recon_loss = F.mse_loss(x_recon, x, reduction='none')
+    # Sum over all elements except batch dimension
+    recon_loss = recon_loss.view(recon_loss.size(0), -1).sum(dim=1)
+    # Average over batch dimension
+    recon_loss = recon_loss.mean()
 
-    kl_loss = -0.5 * torch.sum(1 + 2 * log_std - mu.pow(2) - torch.exp(2 * log_std), dim=1)
+    # KL Divergence
+    kl_loss = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp(), dim=1)
     kl_loss = kl_loss.mean()
 
     total_loss = recon_loss + beta * kl_loss
-    ##################################################################
-    #                          END OF YOUR CODE                      #
-    ##################################################################
     return total_loss, OrderedDict(recon_loss=recon_loss, kl_loss=kl_loss)
+
 
 def constant_beta_scheduler(target_val = 1):
     def _helper(epoch):
