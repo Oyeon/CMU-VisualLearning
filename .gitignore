@@ -8,6 +8,14 @@ lab2/gan/data_gan/
 lab3/transformer_captioning/datasets/     
 lab3/vit_classification/checkpoints/
 # Ignore large data files
+
+# Ignore large data files
+lab2/gan/data_gan/generator.pt
+lab2/gan/data_wgan_gp/generator.pt
+lab2/gan/data_ls_gan/generator.pt
+lab1/reference/q1_q2_classification/detection/fcos_detector.pt
+lab1/reference/detection/fcos_detector.pt
+lab3/vit_classification/data/cifar-10-batches-py/data_batch_2
 lab3/vit_classification/data/cifar-10-batches-py/test_batch
 lab3/vit_classification/data/cifar-10-batches-py/data_batch_5
 lab3/vit_classification/data/cifar-10-batches-py/data_batch_4
@@ -16,7 +24,7 @@ lab3/vit_classification/data/cifar-10-batches-py/data_batch_3
 lab2/cub_clean_custom_na.npz
 lab1/reference/test.pth
 lab1/reference/trained_model.pth
-lab3/vit_classification/data/cifar-10-python
+lab3/vit_classification/data/cifar-10-python.tar.gz
 # Allow specific file types if needed
 !*.csv
 !*.json
