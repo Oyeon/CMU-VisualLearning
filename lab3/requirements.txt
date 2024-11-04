@@ -1,0 +1,8 @@
+h5py==3.10.0
+imageio==2.34.0
+matplotlib==3.7.5
+numpy==1.23.0
+pillow==10.2.0
+torch
+torchaudio
+torchvision
