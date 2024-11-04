@@ -7,6 +7,16 @@ lab2/myenv
 lab2/gan/data_gan/
 lab3/transformer_captioning/datasets/     
 lab3/vit_classification/checkpoints/
+# Ignore large data files
+lab3/vit_classification/data/cifar-10-batches-py/test_batch
+lab3/vit_classification/data/cifar-10-batches-py/data_batch_5
+lab3/vit_classification/data/cifar-10-batches-py/data_batch_4
+lab3/vit_classification/data/cifar-10-batches-py/data_batch_1
+lab3/vit_classification/data/cifar-10-batches-py/data_batch_3
+lab2/cub_clean_custom_na.npz
+lab1/reference/test.pth
+lab1/reference/trained_model.pth
+lab3/vit_classification/data/cifar-10-python
 # Allow specific file types if needed
 !*.csv
 !*.json
